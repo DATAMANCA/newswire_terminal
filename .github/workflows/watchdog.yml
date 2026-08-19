@@ -1,0 +1,32 @@
+name: Watchdog
+
+# Independent schedule from poll.yml. If poll.yml stops firing entirely
+# (e.g. GitHub silently disabled it), this still runs and alerts, because
+# it does not depend on poll.yml's own success/failure to be scheduled.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      - name: Check for stalled pipeline
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python scripts/watchdog_check.py

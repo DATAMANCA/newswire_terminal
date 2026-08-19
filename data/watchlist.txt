@@ -1,0 +1,5 @@
+# Newswire Terminal watchlist
+# One ticker per line. Lines starting with # are ignored.
+# Example:
+# AAPL
+# MSFT

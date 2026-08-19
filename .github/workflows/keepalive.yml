@@ -1,0 +1,39 @@
+name: Keepalive
+
+# Runs monthly to guarantee repo-level activity, which resets GitHub's
+# repo-wide 60-day inactivity clock that would otherwise auto-disable
+# every scheduled workflow in this repo (poll.yml and watchdog.yml included).
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Touch keepalive marker
+        run: |
+          mkdir -p .github
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive-marker
+
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain .github/keepalive-marker)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/keepalive-marker
+            git commit -m "Keepalive [skip ci]"
+            git push
+          else
+            echo "Marker unchanged."
+          fi
