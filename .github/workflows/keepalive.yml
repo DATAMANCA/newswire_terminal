@@ -28,12 +28,24 @@ jobs:
 
       - name: Commit if changed
         run: |
-          if [ -n "$(git status --porcelain .github/keepalive-marker)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .github/keepalive-marker
-            git commit -m "Keepalive [skip ci]"
-            git push
-          else
+          if [ -z "$(git status --porcelain .github/keepalive-marker)" ]; then
             echo "Marker unchanged."
+            exit 0
           fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive-marker
+          git commit -m "Keepalive [skip ci]"
+
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt/5); rebasing onto latest remote and retrying."
+            git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)"
+            sleep $((attempt * 3))
+          done
+
+          echo "::error::Failed to push keepalive marker after 5 attempts."
+          exit 1
