@@ -1,5 +1,38 @@
 # Newswire Terminal watchlist
 # One ticker per line. Lines starting with # are ignored.
-# Example:
-# AAPL
-# MSFT
+PANW
+MSFT
+PLTR
+CRWD
+CRM
+ORCL
+NOW
+ADBE
+APP
+FTNT
+CDNS
+DDOG
+INTU
+SNPS
+ADSK
+EA
+TTWO
+ROP
+MSTR
+WDAY
+FICO
+ZM
+PTC
+NTNX
+TEAM
+MU
+WDC
+STX
+SNDK
+285A.JP
+2408.TT
+2344.TT
+603986.C1
+8299.TT
+SKHY
+2337.TT
