@@ -16,15 +16,12 @@ YAHOO_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
-FINNHUB_API_KEY = os.environ.get("FINNHUB_API_KEY", "")
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
 EDGAR_FORM_ALLOWLIST: set[str] | None = None  # None = include every form type
 
 CIK_CACHE_MAX_AGE_HOURS = 24
-FINNHUB_LOOKBACK_DAYS = 3
-FINNHUB_MIN_INTERVAL_SECONDS = 1.1
 YAHOO_MIN_INTERVAL_SECONDS = 0.75
 
 STATE_RETENTION_DAYS = 180

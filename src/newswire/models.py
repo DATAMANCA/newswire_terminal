@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal, Optional
 
-Source = Literal["EDGAR", "YAHOO", "FINNHUB"]
+Source = Literal["EDGAR", "YAHOO"]
 
 
 @dataclass

@@ -1,17 +1,17 @@
 # Newswire Terminal
 
 Watches a list of stock tickers and emails you a digest whenever there's a new
-SEC EDGAR filing or newswire press release (via Yahoo Finance RSS and
-Finnhub's company-news API). Runs automatically every ~15 minutes on GitHub
-Actions.
+SEC EDGAR filing or newswire press release (via Yahoo Finance RSS, which
+aggregates PR Newswire/Business Wire/GlobeNewswire content). Runs
+automatically every ~15 minutes on GitHub Actions.
 
 ## How it works
 
 - `data/watchlist.txt` — your ticker list. One per line, `#` for comments.
   Edit this file (directly on GitHub, or locally + push) to add/remove tickers.
-- Three sources are polled independently every run: SEC EDGAR, Yahoo Finance
-  RSS, and Finnhub. If one fails, the other two still run and you still get
-  an email for whatever they found.
+- Two sources are polled independently every run: SEC EDGAR and Yahoo Finance
+  RSS. If one fails, the other still runs and you still get an email for
+  whatever it found.
 - New items are emailed to you as one batched digest per run (never one email
   per item), grouped by ticker then source. No email is sent if nothing new
   was found.
@@ -31,12 +31,7 @@ Actions.
 2. Go to Security → App Passwords, create one (name it e.g. "Newswire
    Terminal"), and copy the 16-character password it gives you.
 
-### 2. Get a free Finnhub API key
-
-1. Sign up at https://finnhub.io/register (free tier).
-2. Copy your API key from the dashboard.
-
-### 3. Set GitHub Actions secrets
+### 2. Set GitHub Actions secrets
 
 With the GitHub CLI installed and authenticated (`gh auth login`), from this
 repo's directory:
@@ -44,24 +39,23 @@ repo's directory:
 ```
 gh secret set GMAIL_ADDRESS
 gh secret set GMAIL_APP_PASSWORD
-gh secret set FINNHUB_API_KEY
 ```
 
 Each prompts for the value (paste it and press Enter/Ctrl-D).
 
-### 4. Turn on failure-notification emails
+### 3. Turn on failure-notification emails
 
 GitHub → Settings (your account) → Notifications → Actions: make sure
 "Send notifications for failed workflows" (or equivalent) is enabled. This is
 the outer safety net — if the pipeline hard-fails, GitHub emails you
 independently of anything this app does itself.
 
-### 5. Add your tickers
+### 4. Add your tickers
 
 Edit `data/watchlist.txt` and add your tickers, one per line. Commit and push
 (or edit directly on GitHub).
 
-### 6. Trigger a first run manually
+### 5. Trigger a first run manually
 
 ```
 gh workflow run poll.yml

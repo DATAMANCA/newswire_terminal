@@ -4,7 +4,7 @@ import sys
 from . import config, email_digest, state, summary, watchlist
 from .models import SourceResult
 from .sources import base as source_base
-from .sources import edgar, finnhub, yahoo_rss
+from .sources import edgar, yahoo_rss
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +15,6 @@ logger = logging.getLogger("newswire.main")
 SOURCE_FETCHERS = {
     "EDGAR": edgar.fetch,
     "YAHOO": yahoo_rss.fetch,
-    "FINNHUB": finnhub.fetch,
 }
 
 

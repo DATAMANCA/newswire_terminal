@@ -30,7 +30,6 @@ jobs:
 
       - name: Run poll
         env:
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           PYTHONPATH: src
