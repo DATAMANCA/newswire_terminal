@@ -18,6 +18,7 @@ YAHOO_USER_AGENT = (
 
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+RECIPIENT_EMAIL = os.environ.get("RECIPIENT_EMAIL") or GMAIL_ADDRESS
 
 EDGAR_FORM_ALLOWLIST: set[str] | None = None  # None = include every form type
 

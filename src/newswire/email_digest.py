@@ -86,7 +86,7 @@ def send(new_items: list[NewsItem], source_failures: list[SourceResult]) -> bool
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
     message["From"] = config.GMAIL_ADDRESS
-    message["To"] = config.GMAIL_ADDRESS
+    message["To"] = config.RECIPIENT_EMAIL
     message.attach(MIMEText(text_body, "plain"))
     message.attach(MIMEText(html_body, "html"))
 

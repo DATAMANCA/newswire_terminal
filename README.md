@@ -39,7 +39,11 @@ repo's directory:
 ```
 gh secret set GMAIL_ADDRESS
 gh secret set GMAIL_APP_PASSWORD
+gh secret set RECIPIENT_EMAIL
 ```
+
+`RECIPIENT_EMAIL` is where digests are delivered; it can be any address and
+doesn't need to match `GMAIL_ADDRESS` (the account digests are sent *from*).
 
 Each prompts for the value (paste it and press Enter/Ctrl-D).
 

@@ -23,7 +23,7 @@ def _send_alert(last_run_utc: str | None) -> None:
     message = MIMEText(body)
     message["Subject"] = "Newswire Terminal watchdog: pipeline may be stalled"
     message["From"] = config.GMAIL_ADDRESS
-    message["To"] = config.GMAIL_ADDRESS
+    message["To"] = config.RECIPIENT_EMAIL
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=config.HTTP_TIMEOUT_SECONDS) as smtp:
         smtp.login(config.GMAIL_ADDRESS, config.GMAIL_APP_PASSWORD)
