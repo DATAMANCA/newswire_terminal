@@ -90,8 +90,39 @@ python -m newswire.main
 ## Workflows
 
 - `poll.yml` — the main job, every ~15 minutes.
+- `bonds.yml` — hourly global bond-yield digest (see below).
 - `keepalive.yml` — monthly no-op commit, so GitHub never auto-disables the
   scheduled workflows after 60 days of inactivity.
 - `watchdog.yml` — every 6 hours, emails you if no successful `poll.yml` run
   has been recorded in over 2 hours (catches the case where the schedule
   itself silently stops firing).
+
+## Bond yields digest (`bondwire`)
+
+A separate, self-contained module (`src/bondwire/`) that emails an hourly
+snapshot of government-bond yields for the US, Canada, Germany, UK, France,
+Italy and Japan (2Y / 10Y / 30Y each), plus a euro-area AAA reference row,
+2s10s curve slopes, and key benchmark spreads (BTP–Bund, OAT–Bund,
+Gilt–Bund, UST–Bund, UST–JGB, UST–GoC).
+
+- **Primary source:** CNBC's public quote endpoint — near-real-time, one
+  request, no key.
+- **Official backups:** US Treasury, Bank of Canada, Japan MOF, Bundesbank
+  and the ECB yield curve. These fill any gap CNBC leaves, always supply the
+  euro-area row, and are printed as a "last official close" reference for
+  cross-checking. They refresh only at each market's daily close.
+- Sends **every run** regardless of whether anything moved (`bonds.yml` cron
+  is hourly at minute 17). Each email also shows the move since the previous
+  email, read from `data/bond_state.json` (committed back after every run).
+- Reuses the `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` secrets. Recipient is
+  `malithdisala@gmail.com`, overridable with an optional `BOND_RECIPIENT_EMAIL`
+  secret.
+
+Run it locally the same way as the poller:
+
+```
+set PYTHONPATH=src
+python -m bondwire.main
+```
+
+First run manually with `gh workflow run bonds.yml`.
