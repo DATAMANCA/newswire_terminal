@@ -13,7 +13,7 @@ STATE_PATH = DATA_DIR / "bond_state.json"
 # bond digests and deliberately independent of newswire's RECIPIENT_EMAIL.
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
-RECIPIENT_EMAIL = os.environ.get("BOND_RECIPIENT_EMAIL") or "malithdisala@gmail.com"
+RECIPIENT_EMAIL = os.environ.get("BOND_RECIPIENT_EMAIL") or "mmautom_258@outlook.com"
 
 HTTP_TIMEOUT_SECONDS = 25
 HTTP_MAX_ATTEMPTS = 3

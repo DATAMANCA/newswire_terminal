@@ -115,7 +115,7 @@ Gilt–Bund, UST–Bund, UST–JGB, UST–GoC).
   is hourly at minute 17). Each email also shows the move since the previous
   email, read from `data/bond_state.json` (committed back after every run).
 - Reuses the `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` secrets. Recipient is
-  `malithdisala@gmail.com`, overridable with an optional `BOND_RECIPIENT_EMAIL`
+  `mmautom_258@outlook.com`, overridable with an optional `BOND_RECIPIENT_EMAIL`
   secret.
 
 Run it locally the same way as the poller:
