@@ -31,7 +31,7 @@ TREASURY_URL = (
     "daily-treasury-rates.csv/2026/all"
     "?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv"
 )
-_TREASURY_COLS = {"2Y": "2 Yr", "10Y": "10 Yr", "30Y": "30 Yr"}
+_TREASURY_COLS = {"2Y": "2 Yr", "5Y": "5 Yr", "10Y": "10 Yr", "30Y": "30 Yr"}
 
 
 def parse_treasury(text: str) -> list[YieldPoint]:
@@ -63,6 +63,7 @@ def fetch_treasury() -> list[YieldPoint]:
 # --------------------------------------------------------------------------- CA
 BOC_SERIES = {
     "BD.CDN.2YR.DQ.YLD": "2Y",
+    "BD.CDN.5YR.DQ.YLD": "5Y",
     "BD.CDN.10YR.DQ.YLD": "10Y",
     "BD.CDN.LONG.DQ.YLD": "30Y",  # long-term benchmark, ~30Y proxy
 }
@@ -138,7 +139,7 @@ def parse_mof(text: str) -> list[YieldPoint]:
             return None
 
     out: list[YieldPoint] = []
-    for tenor in ("2Y", "10Y", "30Y"):
+    for tenor in ("2Y", "5Y", "10Y", "30Y"):
         value = cell(latest, tenor)
         if value is None:
             continue
@@ -154,7 +155,7 @@ def fetch_mof() -> list[YieldPoint]:
 
 
 # --------------------------------------------------------------------------- DE
-_BUNDESBANK_KEYS = {"2Y": "R02XX", "10Y": "R10XX", "30Y": "R30XX"}
+_BUNDESBANK_KEYS = {"2Y": "R02XX", "5Y": "R05XX", "10Y": "R10XX", "30Y": "R30XX"}
 
 
 def _bundesbank_url(tenor_key: str) -> str:
@@ -198,7 +199,7 @@ def fetch_bundesbank() -> list[YieldPoint]:
 
 
 # ------------------------------------------------------------------ Euro area (ECB)
-_ECB_KEYS = {"2Y": "SR_2Y", "10Y": "SR_10Y", "30Y": "SR_30Y"}
+_ECB_KEYS = {"2Y": "SR_2Y", "5Y": "SR_5Y", "10Y": "SR_10Y", "30Y": "SR_30Y"}
 
 
 def _ecb_url(data_type: str) -> str:

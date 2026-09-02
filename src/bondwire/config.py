@@ -35,7 +35,7 @@ COUNTRIES: list[tuple[str, str, str]] = [
 ]
 COUNTRY_NAMES = {code: name for code, name, _ in COUNTRIES}
 
-TENORS: list[str] = ["2Y", "10Y", "30Y"]
+TENORS: list[str] = ["2Y", "5Y", "10Y", "30Y"]
 
 # Euro-area AAA yield curve (ECB) — shown as a reference row, not a country.
 EURO_AREA_CODE = "EA"

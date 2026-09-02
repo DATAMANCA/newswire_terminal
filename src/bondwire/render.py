@@ -108,8 +108,8 @@ def _build_text(
 ) -> str:
     idx = _index(points)
     lines = [f"GLOBAL GOVERNMENT BOND YIELDS  —  {ts} UTC", ""]
-    lines.append(f"{'':<16}{'2Y':>18}{'10Y':>18}{'30Y':>18}{'2s10s':>14}")
-    lines.append("-" * 84)
+    lines.append(f"{'':<16}{'2Y':>18}{'5Y':>18}{'10Y':>18}{'30Y':>18}{'2s10s':>14}")
+    lines.append("-" * 102)
 
     rows = [(c, config.COUNTRY_NAMES[c]) for c, _, _ in config.COUNTRIES]
     if any(k[0] == config.EURO_AREA_CODE for k in idx):
@@ -200,7 +200,7 @@ def _build_html(
         "<table cellpadding='8' cellspacing='0' border='0' "
         "style='border-collapse:collapse;margin-top:12px;font-size:14px'>",
         "<tr style='background:#f0f0f0'><th style='text-align:left'>Country</th>"
-        "<th>2Y</th><th>10Y</th><th>30Y</th><th>2s10s</th></tr>",
+        "<th>2Y</th><th>5Y</th><th>10Y</th><th>30Y</th><th>2s10s</th></tr>",
     ]
     rows = [(c, config.COUNTRY_NAMES[c]) for c, _, _ in config.COUNTRIES]
     if any(k[0] == config.EURO_AREA_CODE for k in idx):
@@ -218,6 +218,7 @@ def _build_html(
         h.append(
             f"<tr style='background:{bg}'><td style='text-align:left'>{name}</td>"
             + _cell_html(idx.get((code, "2Y")))
+            + _cell_html(idx.get((code, "5Y")))
             + _cell_html(idx.get((code, "10Y")))
             + _cell_html(idx.get((code, "30Y")))
             + f"<td style='text-align:right;white-space:nowrap'>{curve_html}</td></tr>"
