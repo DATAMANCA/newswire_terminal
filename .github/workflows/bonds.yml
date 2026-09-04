@@ -30,8 +30,7 @@ jobs:
 
       - name: Send bond digest
         env:
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           BOND_RECIPIENT_EMAIL: ${{ secrets.BOND_RECIPIENT_EMAIL }}
           PYTHONPATH: src
         run: python -m bondwire.main

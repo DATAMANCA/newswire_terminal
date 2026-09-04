@@ -24,12 +24,20 @@ automatically every ~15 minutes on GitHub Actions.
 
 ## One-time setup
 
-### 1. Enable 2-Step Verification and create a Gmail App Password
+### 1. Create a Resend account and API key
 
-1. Go to your Google Account → Security → 2-Step Verification, and turn it on
-   if it isn't already.
-2. Go to Security → App Passwords, create one (name it e.g. "Newswire
-   Terminal"), and copy the 16-character password it gives you.
+Email is sent via the [Resend](https://resend.com) HTTP API, not Gmail SMTP —
+GitHub-hosted runners use rotating cloud IPs, and Google's anti-abuse checks
+block plain SMTP username/password logins from them almost every run
+(`534 5.7.9 WebLoginRequired`), regardless of how correct the app password is.
+
+1. Sign up at [resend.com](https://resend.com) (free tier is plenty for a
+   low-volume digest) and create an API key.
+2. Without a verified sending domain, Resend's sandbox sender
+   (`onboarding@resend.dev`) can only deliver to the email address you signed
+   up to Resend with — not to arbitrary recipients. If `RECIPIENT_EMAIL` /
+   `BOND_RECIPIENT_EMAIL` need to be a different address, verify a domain
+   under Resend → Domains and set `RESEND_FROM_EMAIL` to an address on it.
 
 ### 2. Set GitHub Actions secrets
 
@@ -37,13 +45,13 @@ With the GitHub CLI installed and authenticated (`gh auth login`), from this
 repo's directory:
 
 ```
-gh secret set GMAIL_ADDRESS
-gh secret set GMAIL_APP_PASSWORD
+gh secret set RESEND_API_KEY
 gh secret set RECIPIENT_EMAIL
 ```
 
-`RECIPIENT_EMAIL` is where digests are delivered; it can be any address and
-doesn't need to match `GMAIL_ADDRESS` (the account digests are sent *from*).
+`RECIPIENT_EMAIL` is where digests are delivered. Optionally also set
+`RESEND_FROM_EMAIL` (defaults to `Newswire Terminal <onboarding@resend.dev>`)
+if you've verified your own domain.
 
 Each prompts for the value (paste it and press Enter/Ctrl-D).
 
@@ -114,9 +122,10 @@ Gilt–Bund, UST–Bund, UST–JGB, UST–GoC).
 - Sends **every run** regardless of whether anything moved (`bonds.yml` cron
   is hourly at minute 17). Each email also shows the move since the previous
   email, read from `data/bond_state.json` (committed back after every run).
-- Reuses the `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` secrets. Recipient is
-  `mmautom_258@outlook.com`, overridable with an optional `BOND_RECIPIENT_EMAIL`
-  secret.
+- Reuses the `RESEND_API_KEY` secret. Recipient is `mmautom_258@outlook.com`,
+  overridable with an optional `BOND_RECIPIENT_EMAIL` secret — note this
+  requires a verified Resend domain, since it isn't the Resend account's own
+  address (see setup step 1 above).
 
 Run it locally the same way as the poller:
 

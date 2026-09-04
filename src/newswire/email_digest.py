@@ -1,10 +1,8 @@
 import logging
-import smtplib
 from collections import defaultdict
 from datetime import datetime, timezone
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
+import requests
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from . import config
@@ -47,22 +45,19 @@ def _build_body(
         html_lines.append(f"<p style='color:#b00'><b>{warning}</b></p>")
 
     for ticker in sorted(grouped):
-        text_lines.append(f"=== {ticker} ===")
-        html_lines.append(f"<h2>{ticker}</h2>")
+        html_lines.append(f"<h2>{ticker}</h2><ul>")
         for source in sorted(grouped[ticker]):
-            text_lines.append(f"-- {source} --")
-            html_lines.append(f"<h3>{source}</h3><ul>")
             items = sorted(grouped[ticker][source], key=lambda i: i.published_at)
             for item in items:
                 when = item.published_at.strftime("%Y-%m-%d %H:%M UTC")
                 form = item.extra.get("form")
                 label = f"[{form}] " if form else ""
-                text_lines.append(f"  {label}{item.title} ({when})\n  {item.url}")
+                text_lines.append(f"{ticker} ({source}) {label}{when} — {item.title} — {item.url}")
                 html_lines.append(
-                    f"<li>{label}<a href='{item.url}'>{item.title}</a> "
+                    f"<li><b>{source}</b> {label}<a href='{item.url}'>{item.title}</a> "
                     f"<span style='color:#666'>({when})</span></li>"
                 )
-            html_lines.append("</ul>")
+        html_lines.append("</ul>")
         text_lines.append("")
 
     html_lines.append("</body></html>")
@@ -70,10 +65,20 @@ def _build_body(
 
 
 @retry(reraise=True, stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=2, max=30))
-def _send(message: MIMEMultipart) -> None:
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=config.HTTP_TIMEOUT_SECONDS) as smtp:
-        smtp.login(config.GMAIL_ADDRESS, config.GMAIL_APP_PASSWORD)
-        smtp.send_message(message)
+def _send(subject: str, text_body: str, html_body: str) -> None:
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {config.RESEND_API_KEY}"},
+        json={
+            "from": config.RESEND_FROM_EMAIL,
+            "to": [config.RECIPIENT_EMAIL],
+            "subject": subject,
+            "text": text_body,
+            "html": html_body,
+        },
+        timeout=config.HTTP_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
 
 
 def send(new_items: list[NewsItem], source_failures: list[SourceResult]) -> bool:
@@ -83,15 +88,8 @@ def send(new_items: list[NewsItem], source_failures: list[SourceResult]) -> bool
     subject = _build_subject(new_items)
     text_body, html_body = _build_body(new_items, source_failures)
 
-    message = MIMEMultipart("alternative")
-    message["Subject"] = subject
-    message["From"] = config.GMAIL_ADDRESS
-    message["To"] = config.RECIPIENT_EMAIL
-    message.attach(MIMEText(text_body, "plain"))
-    message.attach(MIMEText(html_body, "html"))
-
     try:
-        _send(message)
+        _send(subject, text_body, html_body)
         logger.info("Sent digest email: %s", subject)
         return True
     except Exception:

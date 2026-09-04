@@ -17,8 +17,13 @@ YAHOO_USER_AGENT = (
 )
 
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 RECIPIENT_EMAIL = os.environ.get("RECIPIENT_EMAIL") or GMAIL_ADDRESS
+
+# Gmail SMTP+password auth gets blocked by Google's anti-abuse checks when run
+# from GitHub-hosted runners (rotating IPs trigger "534 WebLoginRequired" on
+# nearly every run), so email is sent via the Resend HTTP API instead.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "Newswire Terminal <onboarding@resend.dev>")
 
 EDGAR_FORM_ALLOWLIST: set[str] | None = None  # None = include every form type
 

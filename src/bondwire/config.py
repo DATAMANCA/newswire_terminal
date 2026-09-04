@@ -9,10 +9,10 @@ DATA_DIR = REPO_ROOT / "data"
 # workflow, since GitHub Actions runners persist nothing themselves.
 STATE_PATH = DATA_DIR / "bond_state.json"
 
-# Reuses the newswire_terminal Gmail sender secrets. The recipient is fixed for
-# bond digests and deliberately independent of newswire's RECIPIENT_EMAIL.
-GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+# Reuses the newswire_terminal Resend sender secrets. The recipient is fixed
+# for bond digests and deliberately independent of newswire's RECIPIENT_EMAIL.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "Newswire Terminal <onboarding@resend.dev>")
 RECIPIENT_EMAIL = os.environ.get("BOND_RECIPIENT_EMAIL") or "mmautom_258@outlook.com"
 
 HTTP_TIMEOUT_SECONDS = 25
