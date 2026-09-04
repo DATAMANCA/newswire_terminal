@@ -1,9 +1,9 @@
 import logging
+import smtplib
 import sys
 from datetime import datetime, timedelta, timezone
+from email.mime.text import MIMEText
 from pathlib import Path
-
-import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -20,18 +20,14 @@ def _send_alert(last_run_utc: str | None) -> None:
         body = "Newswire Terminal has no recorded successful run at all (state.json missing or empty)."
     body += "\n\nCheck the GitHub Actions tab for the poll.yml workflow."
 
-    response = requests.post(
-        "https://api.resend.com/emails",
-        headers={"Authorization": f"Bearer {config.RESEND_API_KEY}"},
-        json={
-            "from": config.RESEND_FROM_EMAIL,
-            "to": [config.RECIPIENT_EMAIL],
-            "subject": "Newswire Terminal watchdog: pipeline may be stalled",
-            "text": body,
-        },
-        timeout=config.HTTP_TIMEOUT_SECONDS,
-    )
-    response.raise_for_status()
+    message = MIMEText(body)
+    message["Subject"] = "Newswire Terminal watchdog: pipeline may be stalled"
+    message["From"] = config.GMAIL_ADDRESS
+    message["To"] = config.RECIPIENT_EMAIL
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=config.HTTP_TIMEOUT_SECONDS) as smtp:
+        smtp.login(config.GMAIL_ADDRESS, config.GMAIL_APP_PASSWORD)
+        smtp.send_message(message)
 
 
 def main() -> int:
