@@ -94,7 +94,7 @@ python -m newswire.main
 - `keepalive.yml` — monthly no-op commit, so GitHub never auto-disables the
   scheduled workflows after 60 days of inactivity.
 - `watchdog.yml` — every 6 hours, emails you if no successful `poll.yml` run
-  has been recorded in over 2 hours (catches the case where the schedule
+  has been recorded in over 3 hours (catches the case where the schedule
   itself silently stops firing).
 
 ## Bond yields digest (`bondwire`)
