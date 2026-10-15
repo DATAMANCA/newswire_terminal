@@ -132,7 +132,7 @@ def _item_html(item: NewsItem, tickers: list[str]) -> str:
     return (
         "<div style='margin:0 0 16px'>"
         + "".join(_badge(t, item.source) for t in tickers)
-        + f" <a href='{html.escape(item.url, quote=True)}' style='color:#0b3d91;font-weight:600;"
+        + f" <a href='{html.escape(item.url, quote=True)}' style='color:#000000;font-weight:600;"
         f"font-size:15px;text-decoration:none'>{_highlight(html.escape(_sentence_for(item)))}</a>"
         f"<div style='color:#6b7280;font-size:12px;margin-top:2px'>"
         f"{source} &middot; {_when(item)}</div>"
