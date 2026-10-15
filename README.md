@@ -13,8 +13,12 @@ automatically every ~15 minutes on GitHub Actions.
   RSS. If one fails, the other still runs and you still get an email for
   whatever it found.
 - New items are emailed to you as one batched digest per run (never one email
-  per item), grouped by ticker then source. No email is sent if nothing new
-  was found.
+  per item). Each story is one sentence (the first sentence of the feed's
+  summary, or a plain description of the SEC form), newest first, with a
+  coloured ticker badge (blue = Yahoo news, orange = SEC filing), the source
+  and Toronto time underneath, and finance keywords highlighted in yellow. A
+  story listed under several tickers is shown once with all their badges.
+  Click the sentence to open it. No email is sent if nothing new was found.
 - State (which items have already been alerted on) is stored in
   `data/state.json` and committed back to the repo after every run, since
   GitHub Actions runners don't persist anything themselves.

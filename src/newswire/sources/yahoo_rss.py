@@ -1,3 +1,4 @@
+import calendar
 import logging
 import time
 from datetime import datetime, timezone
@@ -21,7 +22,7 @@ def _parse_entries(ticker: str, feed) -> list[NewsItem]:
 
         if getattr(entry, "published_parsed", None):
             published_at = datetime.fromtimestamp(
-                time.mktime(entry.published_parsed), tz=timezone.utc
+                calendar.timegm(entry.published_parsed), tz=timezone.utc
             )
         else:
             published_at = datetime.now(timezone.utc)
@@ -34,6 +35,7 @@ def _parse_entries(ticker: str, feed) -> list[NewsItem]:
                 title=entry.get("title", "(untitled)"),
                 url=entry.get("link", ""),
                 published_at=published_at,
+                extra={"summary": entry.get("summary", "")},
             )
         )
     return items
