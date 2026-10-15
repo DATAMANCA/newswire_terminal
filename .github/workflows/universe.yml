@@ -1,0 +1,61 @@
+name: Refresh stock list
+
+# Weekly: re-download every US-listed, US-based company over $100M so the
+# sector emails pick up IPOs and companies crossing the line either way.
+
+on:
+  schedule:
+    - cron: "0 9 * * 0"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: newswire-poll
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      - name: Download stock list
+        env:
+          PYTHONPATH: src
+        run: python -m newswire.market.universe
+
+      - name: Commit updated list
+        run: |
+          if [ -z "$(git status --porcelain data/market_universe.csv)" ]; then
+            echo "Stock list unchanged."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/market_universe.csv
+          git commit -m "Refresh stock list [skip ci]"
+
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt/5); rebasing onto latest remote and retrying."
+            git pull --rebase -X theirs origin "$(git rev-parse --abbrev-ref HEAD)"
+            sleep $((attempt * 3))
+          done
+
+          echo "::error::Failed to push stock list after 5 attempts."
+          exit 1

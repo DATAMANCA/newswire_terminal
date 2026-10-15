@@ -93,13 +93,38 @@ python -m newswire.main
 
 ## Workflows
 
-- `poll.yml` — the main job, every ~15 minutes.
+- `poll.yml` — the main job, every ~15 minutes. After the watchlist digest it
+  also sends the whole-market sector emails (see below).
+- `universe.yml` — Sundays, re-downloads the whole-market stock list.
 - `bonds.yml` — hourly global bond-yield digest (see below).
 - `keepalive.yml` — monthly no-op commit, so GitHub never auto-disables the
   scheduled workflows after 60 days of inactivity.
 - `watchdog.yml` — every 6 hours, emails you if no successful `poll.yml` run
   has been recorded in over 3 hours (catches the case where the schedule
   itself silently stops firing).
+
+## Whole-market sector emails (`newswire.market`)
+
+Covers every US-listed, US-based company worth over $100M (about 3,000),
+except the tickers in your watchlist, which already get the full digest.
+
+- **Stock list:** `data/market_universe.csv`, built from Nasdaq's free stock
+  screener (NYSE, Nasdaq and AMEX). Preferred shares, bonds, warrants, SPACs,
+  closed-end funds and royalty trusts are left out. `universe.yml` refreshes
+  it every Sunday; run `python -m newswire.market.universe` to do it by hand.
+- **SEC filings:** 8-K (with its topics, e.g. "Results of Operations"), 10-Q,
+  10-K, S-1 and 13D stake reports, from EDGAR's all-company "latest filings"
+  feed, so it takes a few requests rather than one per company.
+- **Yahoo news:** every company's feed each run, six at a time (about a
+  minute). If Yahoo starts blocking, set `MARKET_YAHOO_SMALL_PER_RUN` in
+  `config.py` so companies under $10B are checked in rotation instead.
+- **Emails:** one per sector, companies over $10B first, then newest first.
+  A sector with more than 120 stories is split into parts, e.g.
+  "Technology (1/2)", so Gmail doesn't clip it.
+- **Memory:** `data/market_state.json` lives in the GitHub Actions cache, not
+  git. Stories are forgotten after 14 days and anything older than 3 days is
+  never sent. The first time a company (or the SEC feed) is checked, nothing
+  is sent; it just learns what's already out there.
 
 ## Bond yields digest (`bondwire`)
 

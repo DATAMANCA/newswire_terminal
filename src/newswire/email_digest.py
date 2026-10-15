@@ -27,6 +27,7 @@ FORM_NAMES = {
     "DEF 14A": "its proxy statement (DEF 14A)",
     "SC 13G": "a 5%+ ownership report (SC 13G)",
     "SC 13D": "an activist ownership report (SC 13D)",
+    "SCHEDULE 13D": "an activist ownership report (Schedule 13D)",
 }
 
 SOURCE_LABELS = {"EDGAR": "SEC", "YAHOO": "Yahoo"}
@@ -55,6 +56,11 @@ _WIRE_DATELINE = re.compile(
     r"^.*?\((?:GLOBE NEWSWIRE|BUSINESS WIRE|PR NEWSWIRE|ACCESSWIRE|NEWSFILE CORP\.?)[^)]*\)\s*[-–—]+\s*",
     re.IGNORECASE,
 )
+# "ETOBICOKE, Ontario, October 15, 2026--" style datelines without a wire name.
+_PLAIN_DATELINE = re.compile(
+    r"^[A-Z][A-Z .'-]+,(?: [A-Za-z .]+,)? (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? "
+    r"\d{1,2}, \d{4}\s*(?:[-–—]+|/[^/]*/\s*[-–—]*)\s*"
+)
 # "Investing.com -- " style source prefixes.
 _SOURCE_PREFIX = re.compile(r"^[A-Z][\w.&' ]{1,30}\s+[-–—]{2,}\s*")
 # Words ending in a period that don't end a sentence.
@@ -70,6 +76,7 @@ def _first_sentence(text: str) -> str:
     text = html.unescape(re.sub(r"<[^>]+>", " ", text or ""))
     text = re.sub(r"\s+", " ", text).strip()
     text = _WIRE_DATELINE.sub("", text, count=1)
+    text = _PLAIN_DATELINE.sub("", text, count=1)
     text = _SOURCE_PREFIX.sub("", text, count=1)
     for match in re.finditer(r"[.!?](?=\s+[A-Z\"'“])", text):
         last_word = text[: match.start()].rsplit(" ", 1)[-1].lower()
@@ -82,10 +89,31 @@ def _first_sentence(text: str) -> str:
     return text
 
 
+def _form_description(form: str) -> str:
+    amended = form.endswith("/A")
+    base = form.removesuffix("/A")
+    description = FORM_NAMES.get(base, f"a {base} form")
+    if amended:
+        description = f"an amendment to {description.replace('(' + base + ')', '(' + form + ')')}"
+    return description
+
+
+def _sec_sentence(item: NewsItem) -> str:
+    form = item.extra.get("form", "")
+    if "13D" in form.upper():
+        investor = item.extra.get("filed_by") or "An investor"
+        verb = "updated its" if form.endswith("/A") else "reported a"
+        return f"{investor} {verb} 5%+ stake in {item.ticker} ({form})."
+    sentence = f"{item.ticker} filed {_form_description(form)} with the SEC"
+    topics = item.extra.get("items") or []
+    if topics:
+        sentence += ": " + "; ".join(topics)
+    return sentence + "."
+
+
 def _sentence_for(item: NewsItem) -> str:
     if item.source == "EDGAR":
-        form = item.extra.get("form", "")
-        return f"{item.ticker} filed {FORM_NAMES.get(form, f'a {form} form')} with the SEC."
+        return _sec_sentence(item)
     sentence = _first_sentence(item.extra.get("summary", ""))
     # Fall back to the headline when the feed gave nothing useful.
     if len(sentence) < 20:
@@ -106,9 +134,14 @@ def _highlight(escaped_text: str) -> str:
     )
 
 
-def _merge_duplicates(items: list[NewsItem]) -> list[tuple[NewsItem, list[str]]]:
-    """One entry per story; a story Yahoo lists under several tickers gets all of them."""
-    merged: dict[tuple[str, str], tuple[NewsItem, list[str]]] = {}
+Entry = tuple[NewsItem, list[str]]
+
+
+def merge_duplicates(items: list[NewsItem], first: frozenset[str] = frozenset()) -> list[Entry]:
+    """One entry per story; a story Yahoo lists under several tickers gets all
+    of them. Stories about tickers in `first` come before the rest; within
+    each group, newest first."""
+    merged: dict[tuple[str, str], Entry] = {}
     for item in sorted(items, key=lambda i: i.published_at, reverse=True):
         key = (item.source, item.url or item.uid)
         if key in merged:
@@ -116,7 +149,9 @@ def _merge_duplicates(items: list[NewsItem]) -> list[tuple[NewsItem, list[str]]]
                 merged[key][1].append(item.ticker)
         else:
             merged[key] = (item, [item.ticker])
-    return list(merged.values())
+    entries = list(merged.values())
+    entries.sort(key=lambda e: not any(t in first for t in e[1]))  # stable: keeps date order
+    return entries
 
 
 def _badge(ticker: str, source: str) -> str:
@@ -158,18 +193,24 @@ def _build_subject(new_items: list[NewsItem]) -> str:
 def _build_body(
     new_items: list[NewsItem], source_failures: list[SourceResult]
 ) -> tuple[str, str]:
+    return render(merge_duplicates(new_items), [_failure_text(r) for r in source_failures])
+
+
+def _failure_text(result: SourceResult) -> str:
+    return f"{result.source} ({result.error})"
+
+
+def render(entries: list[Entry], failures: list[str]) -> tuple[str, str]:
     text_lines: list[str] = []
     html_lines: list[str] = [f"<html><body style='{FONT};color:#111827;max-width:700px'>"]
 
-    if source_failures:
-        warning = "WARNING: the following sources failed this run: " + ", ".join(
-            f"{r.source} ({r.error})" for r in source_failures
-        )
+    if failures:
+        warning = "WARNING: the following sources failed this run: " + ", ".join(failures)
         text_lines.append(warning)
         text_lines.append("")
         html_lines.append(f"<p style='color:#b00'><b>{html.escape(warning)}</b></p>")
 
-    for item, tickers in _merge_duplicates(new_items):
+    for item, tickers in entries:
         text_lines.append(_item_text(item, tickers))
         text_lines.append("")
         html_lines.append(_item_html(item, tickers))
@@ -189,9 +230,11 @@ def send(new_items: list[NewsItem], source_failures: list[SourceResult]) -> bool
     if not new_items:
         return True
 
-    subject = _build_subject(new_items)
     text_body, html_body = _build_body(new_items, source_failures)
+    return deliver(_build_subject(new_items), text_body, html_body)
 
+
+def deliver(subject: str, text_body: str, html_body: str) -> bool:
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
     message["From"] = config.GMAIL_ADDRESS

@@ -15,7 +15,7 @@ concurrency:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,14 +38,14 @@ jobs:
 
       - name: Commit updated state
         run: |
-          if [ -z "$(git status --porcelain data/)" ]; then
+          if [ -z "$(git status --porcelain data/state.json data/cik_cache.json)" ]; then
             echo "No state changes to commit."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/*.json
+          git add data/state.json data/cik_cache.json
           git commit -m "Update newswire state [skip ci]"
 
           for attempt in 1 2 3 4 5; do
@@ -59,3 +59,30 @@ jobs:
 
           echo "::error::Failed to push updated state after 5 attempts."
           exit 1
+
+      # Sector emails for the whole market (newswire.market). They run after the
+      # watchlist digest so a problem here can never hold that up. Their memory
+      # lives in the Actions cache rather than git, so the repo doesn't grow.
+      - name: Restore sector-email memory
+        if: always()
+        uses: actions/cache/restore@v4
+        with:
+          path: data/market_state.json
+          key: market-state-${{ github.run_id }}
+          restore-keys: market-state-
+
+      - name: Run sector emails
+        if: always()
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          PYTHONPATH: src
+        run: python -m newswire.market.main
+
+      - name: Save sector-email memory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/market_state.json
+          key: market-state-${{ github.run_id }}-${{ github.run_attempt }}

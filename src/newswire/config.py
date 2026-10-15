@@ -37,3 +37,19 @@ WATCHDOG_STALE_THRESHOLD_HOURS = 3
 
 HTTP_TIMEOUT_SECONDS = 20
 HTTP_MAX_ATTEMPTS = 3
+
+# --- Whole-market sector emails (newswire.market) ---
+MARKET_UNIVERSE_PATH = DATA_DIR / "market_universe.csv"
+# Kept in the GitHub Actions cache, not committed, so the repo doesn't grow.
+MARKET_STATE_PATH = DATA_DIR / "market_state.json"
+MARKET_MIN_CAP = 100_000_000
+MARKET_LARGE_CAP = 10_000_000_000  # these get Yahoo news every run and are listed first
+MARKET_STATE_RETENTION_DAYS = 14
+MARKET_MAX_ITEM_AGE_DAYS = 3  # older stories that resurface in a feed are skipped
+MARKET_YAHOO_WORKERS = 6
+# How many companies under $10B get their Yahoo feed checked per run (rotating).
+# None checks all of them every run; lower it if Yahoo starts blocking.
+MARKET_YAHOO_SMALL_PER_RUN: int | None = None
+MARKET_SEC_FORMS = ["8-K", "10-Q", "10-K", "S-1", "SCHEDULE 13D", "SC 13D"]
+MARKET_SEC_MAX_PAGES = 10  # 100 filings per page, per form
+MARKET_MAX_ITEMS_PER_EMAIL = 120  # bigger sector emails are split into parts
