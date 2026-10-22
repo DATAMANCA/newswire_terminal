@@ -97,6 +97,7 @@ python -m newswire.main
   also sends the whole-market sector emails (see below).
 - `universe.yml` — Sundays, re-downloads the whole-market stock list.
 - `bonds.yml` — hourly global bond-yield digest (see below).
+- `technicals.yml` — morning and evening stock-technicals emails (see below).
 - `keepalive.yml` — monthly no-op commit, so GitHub never auto-disables the
   scheduled workflows after 60 days of inactivity.
 - `watchdog.yml` — every 6 hours, emails you if no successful `poll.yml` run
@@ -155,3 +156,40 @@ python -m bondwire.main
 ```
 
 First run manually with `gh workflow run bonds.yml`.
+
+## Stock technicals email (`techwire`)
+
+A separate module (`src/techwire/`) that emails technical-analysis alerts for
+the US tickers in `data/watchlist.txt`. Foreign tickers (anything with a `.`)
+and those in `EXCLUDE_TICKERS` are skipped. It uses daily candles from Yahoo
+Finance's chart API, two years of history.
+
+- **Evening email (~5pm Toronto):** the signals that fired at that day's close,
+  plus a table of every stock (trend, RSI, MACD, % from the 50/200-day
+  averages, Bollinger %B, Stochastic, % from the 52-week high). It is sent
+  every weekday, even when nothing fired.
+- **Morning email (~8am Toronto):** the same signals from the last close, with
+  each stock's pre-market move.
+- **Signals** are events, so each one alerts on the day it happens:
+  - 50/200-day golden and death crosses, and price crossing either average
+  - RSI moving into or out of overbought/oversold (70/30)
+  - MACD crossing its signal line
+  - Stochastic crosses in the overbought/oversold zones
+  - new 52-week highs and lows
+  - closes outside the Bollinger Bands, and Bollinger squeezes
+  - support/resistance breaks (recent swing lows/highs)
+  - volume spikes (2x the 20-day average)
+  - bullish/bearish divergences on RSI, MACD and OBV
+- All settings are in `src/techwire/config.py`.
+- **Triggers:** cron-job.org calls the workflow_dispatch API with `mode`
+  `morning` or `evening`. The workflow's own schedule is a late backup.
+  `data/tech_state.json` records the day each email was sent, so neither one
+  goes out twice.
+- Reuses `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` and `RECIPIENT_EMAIL`.
+
+Preview locally without sending:
+
+```
+set PYTHONPATH=src
+python -m techwire.main --mode evening --force --preview preview.html
+```

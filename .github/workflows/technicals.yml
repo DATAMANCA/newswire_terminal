@@ -1,0 +1,80 @@
+name: Stock technicals
+
+# Normally started by cron-job.org at 08:00 (morning) and 17:00 (evening)
+# Toronto time, Mon-Fri, through the workflow_dispatch API. The schedule below
+# is only a backup in case cron-job.org misses; data/tech_state.json makes sure
+# each email still goes out at most once a day.
+on:
+  schedule:
+    - cron: "15 13 * * 1-5"   # backup morning, ~9:15 EDT / 8:15 EST
+    - cron: "30 22 * * 1-5"   # backup evening, ~6:30pm EDT / 5:30pm EST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "auto, morning or evening"
+        default: "auto"
+      force:
+        description: "Send even if already sent today (true/false)"
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: techwire
+  cancel-in-progress: false
+
+jobs:
+  technicals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      - name: Send technicals email
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          PYTHONPATH: src
+          MODE: ${{ inputs.mode || 'auto' }}
+          FORCE: ${{ inputs.force || 'false' }}
+        run: |
+          if [ "$FORCE" = "true" ]; then
+            python -m techwire.main --mode "$MODE" --force
+          else
+            python -m techwire.main --mode "$MODE"
+          fi
+
+      - name: Commit sent-email record
+        run: |
+          if [ -z "$(git status --porcelain data/tech_state.json)" ]; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tech_state.json
+          git commit -m "Update techwire state [skip ci]"
+
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt/5); rebasing onto latest remote and retrying."
+            git pull --rebase -X theirs origin "$(git rev-parse --abbrev-ref HEAD)"
+            sleep $((attempt * 3))
+          done
+
+          echo "::error::Failed to push updated state after 5 attempts."
+          exit 1
