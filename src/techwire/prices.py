@@ -12,13 +12,15 @@ CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 _MARKET_TZ = ZoneInfo(config.MARKET_TIMEZONE)
 
 
-def daily(session: requests.Session, ticker: str, now: datetime | None = None) -> Candles:
+def daily(
+    session: requests.Session, ticker: str, now: datetime | None = None, history_range: str | None = None
+) -> Candles:
     """Completed daily candles, oldest first. Today's bar is dropped while the
     market is still open (or hasn't opened), since it isn't final yet."""
     response = http_util.get(
         session,
         CHART_URL.format(ticker=ticker),
-        params={"range": config.HISTORY_RANGE, "interval": "1d"},
+        params={"range": history_range or config.HISTORY_RANGE, "interval": "1d"},
     )
     candles = parse_daily(ticker, response.json())
     return drop_unfinished(candles, now or datetime.now(timezone.utc))
