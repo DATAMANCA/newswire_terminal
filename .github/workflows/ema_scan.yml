@@ -1,12 +1,16 @@
 name: 200 EMA scan
 
-# Normally started by cron-job.org at 17:15 Toronto time, Mon-Fri, through the
-# workflow_dispatch API. The schedule below is only a backup in case
-# cron-job.org misses; data/scan_state.json makes sure the email still goes
-# out at most once a day, and no email goes out on market holidays.
+# Aimed at 16:30 Toronto time, Mon-Fri (best started by cron-job.org through
+# the workflow_dispatch API, since GitHub's timer often runs late). GitHub's
+# timer is UTC, so there is one line per daylight-saving season: the run that
+# lands before the 4pm close finds no new close and does nothing, and
+# data/scan_state.json stops any later run sending the same close twice.
+# No email goes out on market holidays.
 on:
   schedule:
-    - cron: "45 22 * * 1-5"   # backup, ~6:45pm EDT / 5:45pm EST
+    - cron: "30 20 * * 1-5"   # 4:30pm EDT (3:30pm EST: before the close, does nothing)
+    - cron: "30 21 * * 1-5"   # 4:30pm EST (5:30pm EDT: already sent, does nothing)
+    - cron: "45 22 * * 1-5"   # late backup, 6:45pm EDT / 5:45pm EST
   workflow_dispatch:
     inputs:
       force:
